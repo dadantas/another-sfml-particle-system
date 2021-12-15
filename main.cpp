@@ -22,6 +22,7 @@ typedef struct particle
 void inicialize(int i, int j, short id);
 void updateSand(int x, int y);
 void updateSmoke(int i, int j);
+void updateWater(int i, int j);
 void update(int i, int j);
 void draw(int i, int j);
 void reset();
@@ -98,10 +99,10 @@ int main()
 			inicialize(point.y - 1, point.x, c_id);
 			inicialize(point.y, point.x + 1, c_id);
 			inicialize(point.y, point.x - 1, c_id);
-			inicialize(point.y + 2, point.x, c_id);
-			inicialize(point.y - 2, point.x, c_id);
-			inicialize(point.y, point.x + 2, c_id);
-			inicialize(point.y, point.x - 2, c_id);
+			inicialize(point.y - 1, point.x + 1, c_id);
+			inicialize(point.y - 1, point.x - 1, c_id);
+			inicialize(point.y + 1, point.x + 1, c_id);
+			inicialize(point.y + 1, point.x - 1, c_id);
 		}
 		if (clock.getElapsedTime().asSeconds() >= 0)
 		{
@@ -148,6 +149,10 @@ void inicialize(int i, int j, short id)
 		k->id = 1;
 		k->color = sf::Color::Yellow;
 		break;
+	case 2:
+		k->id = 2;
+		k->color = sf::Color::Blue;
+		break;
 	case 3:
 		world[i][j].id = 3;
 		k->color.a = 255;
@@ -156,7 +161,7 @@ void inicialize(int i, int j, short id)
 		k->color.b = 180;
 		k->life_time = 3;
 		break;
-	case 0:
+	default:
 		k->id = 0;
 		break;
 	}
@@ -172,7 +177,7 @@ void update(int i, int j)
 		updateSand(i, j);
 		break;
 	case 2:
-
+		updateWater(i, j);
 		break;
 	case 3:
 		updateSmoke(i, j);
@@ -188,15 +193,18 @@ void updateSand(int i, int j)
 	if (i + 1 < winSize_y)
 	{
 		int k = randomBool() ? 1 : -1;
-		if (world[i + 1][j].id == 0)
+		particle up = world[i + 1][j];
+
+		if (up.id == 0 || up.id == 2 || up.id == 3)
 		{
 			world[i + 1][j] = world[i][j];
-			inicialize(i, j, 0);
+			world[i][j] = up;
 		}
-		else if (j + k < winSize_x && j + k >= 0 && world[i + 1][j + k].id == 0)
+		else if (j + k < winSize_x && j + k >= 0 && (world[i+1][j+k].id == 0 || world[i+1][j+k].id == 2 || world[i+1][j+k].id == 3))
 		{
+			particle t = world[i + 1][j + k];
 			world[i + 1][j + k] = world[i][j];
-			inicialize(i, j, 0);
+			world[i][j] = t;
 		}
 	}
 }
@@ -210,24 +218,51 @@ void updateSmoke(int i, int j)
 		return;
 	}
 
+	int h = randomBool() ? 1 : -1;
+	h += (randomBool() && h > -1) ? -1 : 0;
 	int k = randomBool() ? 1 : -1;
-	k += (randomBool() && k > -1) ? -1 : 0;
-	if (i + k < winSize_y && i + k >= 0)
+	if (i + h < winSize_y && i + h >= 0)
 	{
-
-		int h = randomBool() ? 1 : -1;
-		if (world[i + k][j].id == 0)
+		if (world[i + h][j].id == 0)
 		{
-			world[i + k][j] = world[i][j];
-			inicialize(i, j, 0);
+			if (j + k < winSize_x && j + k >= 0 && world[i + h][j + k].id == 0)
+			{
+				world[i + h][j + k] = world[i][j];
+			}
+			else
+				world[i + h][j] = world[i][j];
+			world[i][j].id = 0;
 		}
-		else if (j + k < winSize_x && j + k >= 0 && world[i + k][j + k].id == 0)
-		{
-			world[i + k][j + k] = world[i][j];
+	}
+
+	world[i][j].life_time -= (randomBool()) ? deltaTime : -deltaTime;
+}
+
+void updateWater(int i, int j)
+{
+	particle *x = &world[i][j];
+	x->hasUpdated = true;
+	int h = 1;
+	if (i + h >= winSize_y)
+	{
+		h = 0;
+	}
+	int k = randomBool() ? 1 : -1;
+	if (world[i + h][j].id == 0)
+	{
+		world[i + h][j] = world[i][j];
+		inicialize(i, j, 0);
+	}
+	else if (j + k < winSize_x && j + k >= 0)
+	{
+		if (world[i + h][j + k].id == 0){
+			world[i + h][j + k] = world[i][j];
+			inicialize(i, j, 0);
+		}else if (world[i][j + k].id == 0)	{
+			world[i][j + k] = world[i][j];
 			inicialize(i, j, 0);
 		}
 	}
-	world[i][j].life_time -= (randomBool()) ? deltaTime : -deltaTime;
 }
 
 void draw(int i, int j)

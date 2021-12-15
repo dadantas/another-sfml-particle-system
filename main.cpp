@@ -21,19 +21,21 @@ typedef struct particle
 } particle;
 void inicialize(int i, int j, short id);
 void updateSand(int x, int y);
+void updateSmoke(int i, int j);
 void update(int i, int j);
 void draw(int i, int j);
 void reset();
 particle world[winSize_y][winSize_x] = {};
 sf::RenderWindow window(sf::VideoMode(winSize_x, winSize_y), "Another Physics Simulator");
-bool randomBool() {
-   return rand() > (RAND_MAX / 2);
+bool randomBool()
+{
+	return rand() > (RAND_MAX / 2);
 }
-
+float deltaTime;
 short c_id = 1;
 int main()
 {
-
+	sf::Clock dt;
 	bool dragging = false;
 
 	float deltatime = 0.f;
@@ -41,7 +43,7 @@ int main()
 
 	while (window.isOpen())
 	{
-
+		deltaTime = dt.restart().asSeconds();
 		sf::Event event;
 
 		sf::Vector2i point;
@@ -60,9 +62,11 @@ int main()
 				}
 				if (event.mouseButton.button == sf::Mouse::Right)
 				{
+					sf::Vector2u s = window.getSize();
 					sf::Vector2i p = sf::Mouse::getPosition(window);
+					p.x = round(p.x * (((float)winSize_x) / s.x));
+					p.y = round(p.y * (((float)winSize_y) / s.y));
 					std::cout << p.y << " " << p.x << " id: " << world[p.y][p.x].id;
-					
 				}
 				break;
 
@@ -75,25 +79,30 @@ int main()
 			case sf::Event::KeyPressed:
 				if (event.key.code == sf::Keyboard::D)
 					c_id = 0;
-				else if (event.key.code == sf::Keyboard::A)	
+				else if (event.key.code == sf::Keyboard::A)
 					c_id = 1;
 				else if (event.key.code == sf::Keyboard::W)
 					c_id = 2;
-			}	
-		}
-			if (dragging)
-			{
-				point = sf::Mouse::getPosition(window);
-				inicialize(point.y, point.x, c_id);
-				inicialize(point.y+1, point.x, c_id);
-				inicialize(point.y-1, point.x, c_id);
-				inicialize(point.y, point.x+1, c_id);
-				inicialize(point.y, point.x-1, c_id);
-				inicialize(point.y+2, point.x, c_id);
-				inicialize(point.y-2, point.x, c_id);
-				inicialize(point.y, point.x+2, c_id);
-				inicialize(point.y, point.x-2, c_id);
+				else if (event.key.code == sf::Keyboard::S)
+					c_id = 3;
 			}
+		}
+		if (dragging)
+		{
+			sf::Vector2u s = window.getSize();
+			sf::Vector2i point = sf::Mouse::getPosition(window);
+			point.x = round(point.x * (((float)winSize_x) / s.x));
+			point.y = round(point.y * (((float)winSize_y) / s.y));
+			inicialize(point.y, point.x, c_id);
+			inicialize(point.y + 1, point.x, c_id);
+			inicialize(point.y - 1, point.x, c_id);
+			inicialize(point.y, point.x + 1, c_id);
+			inicialize(point.y, point.x - 1, c_id);
+			inicialize(point.y + 2, point.x, c_id);
+			inicialize(point.y - 2, point.x, c_id);
+			inicialize(point.y, point.x + 2, c_id);
+			inicialize(point.y, point.x - 2, c_id);
+		}
 		if (clock.getElapsedTime().asSeconds() >= 0)
 		{
 
@@ -125,57 +134,66 @@ void reset()
 		for (int j = 0; j < winSize_x; j++)
 		{
 			world[i][j].hasUpdated = false;
+			world[i][j].life_time -= deltaTime;
 		}
 	}
 }
 
 void inicialize(int i, int j, short id)
 {
-
-	world[i][j].life_time = 0;
-	world[i][j].velocity = sf::Vector2i();
+	particle *k = &world[i][j];
 	switch (id)
 	{
 	case 1:
-		world[i][j].id = 1;
-		world[i][j].color = sf::Color::Yellow;
+		k->id = 1;
+		k->color = sf::Color::Yellow;
+		break;
+	case 3:
+		world[i][j].id = 3;
+		k->color.a = 255;
+		k->color.r = 180;
+		k->color.g = 180;
+		k->color.b = 180;
+		k->life_time = 3;
 		break;
 	case 0:
-		particle x;
-		x.id = 0;
-		world[i][j] = x;
+		k->id = 0;
 		break;
 	}
 }
 
-void update(int i, int j){
+void update(int i, int j)
+{
 	switch (world[i][j].id)
 	{
 	case 0:
 		break;
 	case 1:
-		updateSand(i,j);
+		updateSand(i, j);
 		break;
 	case 2:
 
 		break;
-	} 
+	case 3:
+		updateSmoke(i, j);
+		break;
+	}
 }
 
 void updateSand(int i, int j)
 {
+
 	world[i][j].hasUpdated = true;
-	
+
 	if (i + 1 < winSize_y)
 	{
-		int k = randomBool()?1:-1;
-		int h = randomBool()?1:-1;
+		int k = randomBool() ? 1 : -1;
 		if (world[i + 1][j].id == 0)
 		{
 			world[i + 1][j] = world[i][j];
 			inicialize(i, j, 0);
 		}
-		else if (j + k < winSize_x && j + k >= 0  && world[i + 1][j + k].id == 0)
+		else if (j + k < winSize_x && j + k >= 0 && world[i + 1][j + k].id == 0)
 		{
 			world[i + 1][j + k] = world[i][j];
 			inicialize(i, j, 0);
@@ -183,9 +201,39 @@ void updateSand(int i, int j)
 	}
 }
 
+void updateSmoke(int i, int j)
+{
+	world[i][j].hasUpdated = true;
+	if (world[i][j].life_time <= 0)
+	{
+		world[i][j].id = 0;
+		return;
+	}
+
+	int k = randomBool() ? 1 : -1;
+	k += (randomBool() && k > -1) ? -1 : 0;
+	if (i + k < winSize_y && i + k >= 0)
+	{
+
+		int h = randomBool() ? 1 : -1;
+		if (world[i + k][j].id == 0)
+		{
+			world[i + k][j] = world[i][j];
+			inicialize(i, j, 0);
+		}
+		else if (j + k < winSize_x && j + k >= 0 && world[i + k][j + k].id == 0)
+		{
+			world[i + k][j + k] = world[i][j];
+			inicialize(i, j, 0);
+		}
+	}
+	world[i][j].life_time -= (randomBool()) ? deltaTime : -deltaTime;
+}
+
 void draw(int i, int j)
 {
-	if(world[i][j].id != 0){
+	if (world[i][j].id != 0)
+	{
 		sf::RectangleShape s = sf::RectangleShape(sf::Vector2f(1, 1));
 		s.setFillColor(world[i][j].color);
 		s.setPosition(sf::Vector2f(j, i));

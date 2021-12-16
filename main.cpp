@@ -9,6 +9,7 @@ const int winSize_y = 300;
 const float gravity = 10.0;
 
 float timeScale = 1.0;
+bool updateCheck = true;;
 
 void fall(bool world[winSize_y][winSize_x], float deltaTime);
 typedef struct particle
@@ -25,7 +26,7 @@ void updateSmoke(int i, int j);
 void updateWater(int i, int j);
 void update(int i, int j);
 void draw(int i, int j);
-void reset();
+
 particle world[winSize_y][winSize_x] = {};
 sf::RenderWindow window(sf::VideoMode(winSize_x, winSize_y), "Another Physics Simulator");
 bool randomBool()
@@ -111,7 +112,7 @@ int main()
 			{
 				for (int j = 0; j < winSize_x; j++)
 				{
-					if (world[i][j].id != 0 && !world[i][j].hasUpdated)
+					if (world[i][j].id != 0 && world[i][j].hasUpdated != updateCheck)
 					{
 						update(i, j);
 					}
@@ -120,25 +121,15 @@ int main()
 			}
 			window.display();
 			window.clear();
-			reset();
 			clock.restart();
+			updateCheck = !updateCheck;
 		}
 	}
 
 	return 0;
 }
 
-void reset()
-{
-	for (int i = 0; i < winSize_y; i++)
-	{
-		for (int j = 0; j < winSize_x; j++)
-		{
-			world[i][j].hasUpdated = false;
-			world[i][j].life_time -= deltaTime;
-		}
-	}
-}
+
 
 void inicialize(int i, int j, short id)
 {
@@ -188,7 +179,7 @@ void update(int i, int j)
 void updateSand(int i, int j)
 {
 
-	world[i][j].hasUpdated = true;
+	world[i][j].hasUpdated = updateCheck;
 
 	if (i + 1 < winSize_y)
 	{
@@ -211,7 +202,7 @@ void updateSand(int i, int j)
 
 void updateSmoke(int i, int j)
 {
-	world[i][j].hasUpdated = true;
+	world[i][j].hasUpdated = updateCheck;
 	if (world[i][j].life_time <= 0)
 	{
 		world[i][j].id = 0;

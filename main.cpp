@@ -6,19 +6,21 @@
 
 const int winSize_x = 400;
 const int winSize_y = 300;
-const float gravity = 10.0;
+const float gravity = 100.0;
 
 float timeScale = 1.0;
-bool updateCheck = true;;
+bool updateCheck = true;
+;
 
 void fall(bool world[winSize_y][winSize_x], float deltaTime);
 typedef struct particle
 {
 	short id;
 	float life_time;
-	sf::Vector2i velocity;
+	sf::Vector2f velocity;
 	sf::Color color;
 	bool hasUpdated;
+	short density;
 } particle;
 void inicialize(int i, int j, short id);
 void updateSand(int x, int y);
@@ -45,7 +47,8 @@ int main()
 
 	while (window.isOpen())
 	{
-		deltaTime = dt.restart().asSeconds();
+		double frameTime = dt.restart().asSeconds();
+		deltaTime = (frameTime < 1 / 60.0) ? frameTime : 1 / 60.0;
 		sf::Event event;
 
 		sf::Vector2i point;
@@ -129,8 +132,6 @@ int main()
 	return 0;
 }
 
-
-
 void inicialize(int i, int j, short id)
 {
 	particle *k = &world[i][j];
@@ -139,10 +140,12 @@ void inicialize(int i, int j, short id)
 	case 1:
 		k->id = 1;
 		k->color = sf::Color::Yellow;
+		k->density = 3;
 		break;
 	case 2:
 		k->id = 2;
 		k->color = sf::Color::Blue;
+		k->density = 2;
 		break;
 	case 3:
 		world[i][j].id = 3;
@@ -150,16 +153,71 @@ void inicialize(int i, int j, short id)
 		k->color.r = 180;
 		k->color.g = 180;
 		k->color.b = 180;
-		k->life_time = 3;
+		k->life_time = 3*(randomBool()?2:1);
+		k->density = 1;
 		break;
 	default:
 		k->id = 0;
+		k->density = 0;
 		break;
 	}
 }
 
+bool stuck(int i, int j)
+{
+	particle x = world[i][j];
+	if (i + 1 < winSize_y && world[i + 1][j].density < x.density)
+	{
+		return false;
+	}
+	else if (i + 1 < winSize_y && j + 1 < winSize_x && world[i + 1][j + 1].density < x.density)
+	{
+		return false;
+	}
+	else if (i + 1 < winSize_y && j - 1 >= 0 && world[i + 1][j - 1].density < x.density)
+	{
+		return false;
+	}
+	if (x.id == 2 || x.id == 3)
+	{
+		if (j + 1 < winSize_x && world[i][j + 1].density < x.density)
+		{
+			return false;
+		}
+		else if (j - 1 >= 0 && world[i][j - 1].density < x.density)
+		{
+			return false;
+		}
+	}
+	if (x.id == 3 && i - 1 >= 0)
+	{
+		if (world[i - 1][j].density <= x.density)
+		{
+			return false;
+		}
+		else if (j + 1 < winSize_x && world[i - 1][j + 1].density <= x.density)
+		{
+			return false;
+		}
+		else if (j - 1 >= 0 && world[i - 1][j - 1].density <= x.density)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 void update(int i, int j)
 {
+	world[i][j].hasUpdated = updateCheck;
+
+	world[i][j].life_time -= deltaTime;
+	if (stuck(i, j))
+	{
+		world[i][j].velocity.x = 0;
+		world[i][j].velocity.y = 0;
+		return;
+	}
 	switch (world[i][j].id)
 	{
 	case 0:
@@ -179,30 +237,39 @@ void update(int i, int j)
 void updateSand(int i, int j)
 {
 
-	world[i][j].hasUpdated = updateCheck;
 
-	if (i + 1 < winSize_y)
+
+	int maxD = world[i][j].velocity.y * gravity;
+	world[i][j].velocity.y += gravity * deltaTime;
+
+	for (i; maxD - i > 0; i++)
 	{
-		int k = randomBool() ? 1 : -1;
-		particle up = world[i + 1][j];
+		if (i + 1 < winSize_y)
+		{
+			int k = randomBool() ? 1 : -1;
+			particle down = world[i + 1][j];
 
-		if (up.id == 0 || up.id == 2 || up.id == 3)
-		{
-			world[i + 1][j] = world[i][j];
-			world[i][j] = up;
-		}
-		else if (j + k < winSize_x && j + k >= 0 && (world[i+1][j+k].id == 0 || world[i+1][j+k].id == 2 || world[i+1][j+k].id == 3))
-		{
-			particle t = world[i + 1][j + k];
-			world[i + 1][j + k] = world[i][j];
-			world[i][j] = t;
+			if (down.density < world[i][j].density)
+			{
+				world[i + 1][j] = world[i][j];
+				world[i][j] = down;
+			}
+			else if (j + k < winSize_x && j + k >= 0 && world[i + 1][j + k].density < world[i][j].density)
+			{
+				particle t = world[i + 1][j + k];
+				world[i + 1][j + k] = world[i][j];
+				world[i][j] = t;
+			}
+			else
+			{
+				break;
+			}
 		}
 	}
 }
 
 void updateSmoke(int i, int j)
 {
-	world[i][j].hasUpdated = updateCheck;
 	if (world[i][j].life_time <= 0)
 	{
 		world[i][j].id = 0;
@@ -226,13 +293,11 @@ void updateSmoke(int i, int j)
 		}
 	}
 
-	world[i][j].life_time -= (randomBool()) ? deltaTime : -deltaTime;
 }
 
 void updateWater(int i, int j)
 {
 	particle *x = &world[i][j];
-	x->hasUpdated = true;
 	int h = 1;
 	if (i + h >= winSize_y)
 	{
@@ -246,10 +311,13 @@ void updateWater(int i, int j)
 	}
 	else if (j + k < winSize_x && j + k >= 0)
 	{
-		if (world[i + h][j + k].id == 0){
+		if (world[i + h][j + k].id == 0)
+		{
 			world[i + h][j + k] = world[i][j];
 			inicialize(i, j, 0);
-		}else if (world[i][j + k].id == 0)	{
+		}
+		else if (world[i][j + k].id == 0)
+		{
 			world[i][j + k] = world[i][j];
 			inicialize(i, j, 0);
 		}

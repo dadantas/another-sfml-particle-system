@@ -1,5 +1,7 @@
 {
     "files.associations": {
+        "*.cpp": "cpp",
+        "*.hs": "haskell",
         "array": "cpp",
         "atomic": "cpp",
         "*.tcc": "cpp",
@@ -45,7 +47,8 @@
         "streambuf": "cpp",
         "typeinfo": "cpp",
         "thread": "cpp",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "list": "cpp"
     },
     "C_Cpp.errorSquiggles": "Enabled",
     "C_Cpp.autocompleteAddParentheses": true

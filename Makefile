@@ -1,8 +1,9 @@
 all: compile link open
 
 compile:
-	g++ -I src/include -c main.cpp
+	g++ -I inc -c src/main.cpp -o obj/main.o
 link:
-	g++ main.o -o main -L src/lib -l sfml-graphics -l sfml-window -l sfml-system
+	g++ obj/main.o -o main -L lib -l sfml-graphics -l sfml-window -l sfml-system
 open:
 	main.exe	
+

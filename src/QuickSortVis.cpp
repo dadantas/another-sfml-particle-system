@@ -1,17 +1,27 @@
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <cmath>
 #include <chrono> 
 #include <thread>
 #include <iostream>
 #include<stdio.h>
-sf::RenderWindow window(sf::VideoMode(1575, 720), "QuickSort Visualization");
+
+int arr_size = 200; //Change this to alter the array to sort size
+
+const int WINDOW_WIDTH = 1575;
+const int WINDOW_HEIGHT = 720;
+const int RECTANGLE_WIDTH = WINDOW_WIDTH / (arr_size);
+sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "QuickSort Visualization");
 
 void drawArr(int arr[], int g1, int g2, int p)
-{
+{   
     window.clear();
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < arr_size; i++)
     {
-        sf::RectangleShape rec(sf::Vector2f(10, arr[i]*7));
+        float rec_height = (WINDOW_HEIGHT)*arr[i]/arr_size;
+
+        // Create a rectangle shape
+        sf::RectangleShape rec(sf::Vector2f(RECTANGLE_WIDTH, rec_height));
         if(i == g1 || i == g2)
             rec.setFillColor(sf::Color::Green);
         else if (i == p)
@@ -20,8 +30,10 @@ void drawArr(int arr[], int g1, int g2, int p)
             rec.setFillColor(sf::Color::White);        
         rec.setOutlineColor(sf::Color::Black);
         rec.setOutlineThickness(1);
-        rec.setPosition(45+i*15, 720 - (arr[i]*7) / 2.0);
+        rec.setPosition((RECTANGLE_WIDTH+1)*i,WINDOW_HEIGHT/2-((rec_height) / 2.0));
         window.draw(rec);
+
+ 
     }
 }
 
@@ -66,40 +78,6 @@ int partition (int arr[], int low, int high)
     return (i + 1);
 }
  
-void checkIfSorted(int arr[], int min, int max)
-{
-    bool notSorted = false;
-    window.setFramerateLimit(15);
-    for (int i = min; i < max && !notSorted; i++)
-    {   
-        window.clear();
-        int s = 0;
-        
-        if( i+1 < max && arr[i+1] >= arr[i] && !notSorted)
-        {
-           s = i;  
-        }
-        else{ 
-            notSorted = true;         
-        }
-        for(int j = 0; j < 100;j++)
-        {
-            sf::RectangleShape rec(sf::Vector2f(10, arr[j]*7));
-            rec.setOutlineThickness(1);
-            rec.setPosition(45+j*15, 720 - (arr[j]*7) / 2.0);
-            if( j>=min && j <= s && j < max)
-            {
-                rec.setFillColor(sf::Color::Green);     
-            }
-            else{
-                rec.setFillColor(sf::Color::White);            
-            }
-            window.draw(rec);
-        }
-        window.display();
-    }
-    window.setFramerateLimit(60);
-}
 
 /* The main function that implements QuickSort
  arr[] --> Array to be sorted,
@@ -134,13 +112,14 @@ int main()
     if (cursor.loadFromSystem(sf::Cursor::Arrow))
         window.setMouseCursor(cursor);
     int offset = 50;
-    int randArray[100];
-    for(int i=0;i<100;i++)
-      randArray[i]=rand()%101;  //Generate number between 0 to 100
+    
+    int randArray[arr_size];
+    for(int i=0;i<arr_size;i++)
+      randArray[i]=rand()%arr_size;  
 
-    quickSort(randArray, 0, 99);
-    for(int i=0;i<100;i++)
-      std::cout << randArray[i] << " "; 
+    quickSort(randArray, 0, arr_size-1);
+    for(int i=0;i<arr_size;i++)
+      std::cout << randArray[i] << "\n "; 
     window.close();
     sf::Event event;
     return 0;

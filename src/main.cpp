@@ -4,6 +4,9 @@
 #include <time.h>
 #include <math.h>
 #include <world_render.hpp>
+#include <random>
+
+
 
 bool updateCheck = true;
 
@@ -163,31 +166,42 @@ void create(int i, int j, short id)
 	}
 
 }
+float random_float(float min, float max) {
+
+
+
+	return ((float)rand() / RAND_MAX) * (max - min) + min;
+
+
+
+}
+
+
 
 void inicialize(int i, int j, short id)
 {
 	particle *k = &world[i][j];
 	switch (id)
 	{
-	case 1:
+	case 1: //sand
 		k->id = 1;
 		k->color = sf::Color::Yellow;
 		k->density = 3;
 		k->weight = 0.1;
 		break;
-	case 2:
+	case 2: //water
 		k->id = 2;
 		k->color = sf::Color::Blue;
 		k->density = 2;
 		k->weight = 100;
 		break;
-	case 3:
+	case 3: //smoke
 		world[i][j].id = 3;
 		k->color.a = 255;
 		k->color.r = 180;
 		k->color.g = 180;
 		k->color.b = 180;
-		k->life_time = 3 * (randomBool() ? 2 : 1);
+		k->life_time = random_float(1,10);
 		k->density = 1;
 		k->weight = 0.01;
 		break;
@@ -360,19 +374,15 @@ void updateWater(int i, int j)
 	updateSand(i, j);
 	int k = randomBool() ? 1 : -1;
 
-	if (j + k < winSize_x && j + k >= 0)
+	if (j + k < winSize_x && j + k >= 0 && world[i][j + k].density < world[i][j].density)
 	{
-		if (world[i][j + k].density < world[i][j].density)
-		{
+
 			switch_particles(i, j, i, j + k);
-		}
+		
 	}
-	else if (j - k < winSize_x && j - k >= 0)
+	else if (j - k < winSize_x && j - k >= 0 && world[i][j - k].density < world[i][j].density)
 	{
-		if (world[i][j - k].density < world[i][j].density)
-		{
 			switch_particles(i, j, i, j - k);
-		}
 	}
 	
 	

@@ -5,6 +5,7 @@
 #include <math.h>
 #include <world_render.hpp>
 #include <random>
+#include <optional>
 
 
 
@@ -15,7 +16,7 @@ void create(int i, int j, short id);
 
 particle world[winSize_y][winSize_x] = {};
 particle worldCopy[winSize_y][winSize_x] = {};
-sf::RenderWindow window(sf::VideoMode(winSize_x, winSize_y), "Another Physics Simulator");
+
 bool randomBool()
 {
 	return rand() > (RAND_MAX / 2);
@@ -26,10 +27,71 @@ int create_dim = 1;
 
 int main()
 {
+	sf::RenderWindow window(sf::VideoMode(sf::Vector2u(winSize_x, winSize_y)), "Another Physics Simulator");
 	sf::Font font;
-			font.loadFromFile("assets/ari.ttf");
+	font.openFromFile("assets/ari.ttf");
 	sf::Clock dt;
 	bool dragging = false;
+	const auto onClose = [&window](const sf::Event::Closed&)
+	{
+		window.close();
+	};
+
+	const auto onKeyPressed = [&window](const sf::Event::KeyPressed& keyPressed)
+	{
+		if (keyPressed.scancode == sf::Keyboard::Scancode::Escape)
+			window.close();
+		switch (keyPressed.scancode)
+				{
+				case sf::Keyboard::Scancode::D:
+					c_id = 0;
+					break;
+				case sf::Keyboard::Scancode::A:
+					c_id = 1;
+					break;
+				case sf::Keyboard::Scancode::W:
+					c_id = 2;
+					break;
+				case sf::Keyboard::Scancode::S:
+					c_id = 3;
+					break;
+				case sf::Keyboard::Scancode::P:
+					c_id = 4;
+					break;	
+				case sf::Keyboard::Scancode::Up:
+					create_dim = std::min(10, create_dim + 1);
+					break;
+				case sf::Keyboard::Scancode::Down:
+					create_dim = std::max(1, create_dim - 1);
+					break;
+				default:
+					break;
+				}
+	};
+
+	const auto onMousePressed = [&dragging, &window](const sf::Event::MouseButtonPressed& mousePressed)
+	{
+				if (mousePressed.button == sf::Mouse::Button::Left)
+				{
+					dragging = true;
+				}
+				if (mousePressed.button == sf::Mouse::Button::Right)
+				{
+					sf::Vector2u s = window.getSize();
+					sf::Vector2i p = sf::Mouse::getPosition(window);
+					p.x = round(p.x * (((float)winSize_x) / s.x));
+					p.y = round(p.y * (((float)winSize_y) / s.y));
+					std::cout << p.y << " " << p.x << " id: " << world[p.y][p.x].id <<"\n";
+				}
+	};
+
+	const auto onMouseReleased = [&dragging](const sf::Event::MouseButtonReleased& mouseReleased)
+	{
+				if (mouseReleased.button == sf::Mouse::Button::Left)
+				{
+					dragging = false;
+				}
+	};
 
 	float deltatime = 0.f;
 	sf::Clock clock;
@@ -38,57 +100,9 @@ int main()
 
 		double frameTime = dt.restart().asSeconds();
 		deltaTime = (frameTime < 1 / 60.0) ? frameTime : 1 / 60.0;
-		sf::Event event;
-
+		
 		sf::Vector2i point;
-
-		while (window.pollEvent(event))
-		{
-
-			switch (event.type)
-			{
-			case sf::Event::Closed:
-				window.close();
-				break;
-
-			case sf::Event::MouseButtonPressed:
-				if (event.mouseButton.button == sf::Mouse::Left)
-				{
-					dragging = true;
-				}
-				if (event.mouseButton.button == sf::Mouse::Right)
-				{
-					sf::Vector2u s = window.getSize();
-					sf::Vector2i p = sf::Mouse::getPosition(window);
-					p.x = round(p.x * (((float)winSize_x) / s.x));
-					p.y = round(p.y * (((float)winSize_y) / s.y));
-					std::cout << p.y << " " << p.x << " id: " << world[p.y][p.x].id <<"\n";
-				}
-				break;
-
-			case sf::Event::MouseButtonReleased:
-				if (event.mouseButton.button == sf::Mouse::Left)
-				{
-					dragging = false;
-				}
-				break;
-			case sf::Event::KeyPressed:
-				if (event.key.code == sf::Keyboard::D)
-					c_id = 0;
-				else if (event.key.code == sf::Keyboard::A)
-					c_id = 1;
-				else if (event.key.code == sf::Keyboard::W)
-					c_id = 2;
-				else if (event.key.code == sf::Keyboard::S)
-					c_id = 3;
-				else if (event.key.code == sf::Keyboard::P)
-					c_id = 4;
-				else if (event.key.code == sf::Keyboard::Down)
-					create_dim = __max(1, create_dim - 1);
-				else if (event.key.code == sf::Keyboard::Up)
-					create_dim = __min(10, create_dim + 1);
-			}
-		}
+		window.handleEvents(onClose, onKeyPressed, onMousePressed, onMouseReleased);
 		if (dragging)
 		{
 			sf::Vector2u s = window.getSize();
@@ -116,7 +130,7 @@ int main()
 				}
 			}
 
-			sf::VertexArray points(sf::Quads, winSize_y*winSize_x * 4);
+			sf::VertexArray points(sf::PrimitiveType::Triangles, winSize_y*winSize_x * 6);
 			int index = 0;
 			for (int i = 0; i < winSize_y ; i++)
 			{
@@ -130,16 +144,19 @@ int main()
 					points[index+1].color = world[i][j].color;
 					points[index+2].position = sf::Vector2f(j + 0.5, i + 0.5);
 					points[index+2].color = world[i][j].color;
-					points[index+3].position = sf::Vector2f(j + 0.5, i - 0.5);
+					points[index+3].position = sf::Vector2f(j - 0.5, i - 0.5);
 					points[index+3].color = world[i][j].color;
-					index += 4;
+					points[index+4].position = sf::Vector2f(j + 0.5, i + 0.5);
+					points[index+4].color = world[i][j].color;
+					points[index+5].position = sf::Vector2f(j + 0.5, i - 0.5);
+					points[index+5].color = world[i][j].color;
+					index += 6;
 				}
 			}
 			window.draw(points);
 
-			sf::Text text(std::to_string(((int)floor(1 / deltaTime))) + "\n" + std::to_string(totalDrawn), font);
-			text.setCharacterSize(10);
-			text.setPosition(winSize_x * 0.05, winSize_y * 0.05);
+			sf::Text text(font, std::to_string(((int)floor(1 / deltaTime))) + "\n" + std::to_string(totalDrawn), 10);
+			text.setPosition(sf::Vector2f(winSize_x * 0.05, winSize_y * 0.05));
 			window.draw(text);
 
 			window.display();
@@ -388,7 +405,7 @@ void updateWater(int i, int j)
 	
 }
 
-int draw(int i, int j)
+int draw(int i, int j, sf::RenderWindow& window)
 {
 
 	if (world[i][j].id != 0)

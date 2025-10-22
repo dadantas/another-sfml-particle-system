@@ -11,9 +11,8 @@ int arr_size = 200; //Change this to alter the array to sort size
 const int WINDOW_WIDTH = 1575;
 const int WINDOW_HEIGHT = 720;
 const int RECTANGLE_WIDTH = WINDOW_WIDTH / (arr_size);
-sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "QuickSort Visualization");
 
-void drawArr(int arr[], int g1, int g2, int p)
+void drawArr(int arr[], int g1, int g2, int p, sf::RenderWindow& window)
 {   
     window.clear();
     for (int i = 0; i < arr_size; i++)
@@ -30,7 +29,7 @@ void drawArr(int arr[], int g1, int g2, int p)
             rec.setFillColor(sf::Color::White);        
         rec.setOutlineColor(sf::Color::Black);
         rec.setOutlineThickness(1);
-        rec.setPosition((RECTANGLE_WIDTH+1)*i,WINDOW_HEIGHT/2-((rec_height) / 2.0));
+        rec.setPosition(sf::Vector2f((RECTANGLE_WIDTH+1)*i,WINDOW_HEIGHT/2-((rec_height) / 2.0)));
         window.draw(rec);
 
  
@@ -56,13 +55,13 @@ static void swap(int arr[], int i, int j)
     array, and places all smaller (smaller than pivot)
    to left of pivot and all greater elements to right
    of pivot */
-int partition (int arr[], int low, int high)
+int partition (int arr[], int low, int high, sf::RenderWindow& window)
 {
     int pivot = arr[high];    // pivot
     int i = (low - 1);  // Index of smaller element
     for (int j = low; j <= high- 1; j++)
     {   
-        drawArr(arr, i, j, high);
+        drawArr(arr, i, j, high, window);
         window.display();
         // If current element is smaller than or
         // equal to pivot
@@ -71,7 +70,7 @@ int partition (int arr[], int low, int high)
             i++;    // increment index of smaller element
             swap(arr, i, j);
         }
-        drawArr(arr, i, j, high);
+        drawArr(arr, i, j, high, window);
         window.display();
     }
     swap(arr, i + 1, high);
@@ -83,7 +82,7 @@ int partition (int arr[], int low, int high)
  arr[] --> Array to be sorted,
   low  --> Starting index,
   high  --> Ending index */
-void quickSort(int arr[], int low, int high)
+void quickSort(int arr[], int low, int high, sf::RenderWindow& window)
 {
     
     //checkIfSorted(arr, low, high+1);
@@ -91,36 +90,36 @@ void quickSort(int arr[], int low, int high)
     {
         /* pi is partitioning index, arr[p] is now
            at right place */
-        drawArr(arr, -1, -1, -1);
+        drawArr(arr, -1, -1, -1, window);
         window.display(); 
-        int pi = partition(arr, low, high);
-        
+        int pi = partition(arr, low, high, window);
+
         // Separately sort elements before
         // partition and after partition
-        quickSort(arr, low, pi - 1);
-        quickSort(arr, pi + 1, high);
+        quickSort(arr, low, pi - 1, window);
+        quickSort(arr, pi + 1, high, window);
     }
-    drawArr(arr, -1, -1, -1);
+    drawArr(arr, -1, -1, -1, window);
     window.display();
 }
 
 
 int main()
 {
+    sf::RenderWindow window(sf::VideoMode(sf::Vector2u(WINDOW_WIDTH, WINDOW_HEIGHT)), "QuickSort Visualization");
+
     window.setFramerateLimit(60);
-    sf::Cursor cursor;
-    if (cursor.loadFromSystem(sf::Cursor::Arrow))
-        window.setMouseCursor(cursor);
+    sf::Cursor cursor(sf::Cursor::Type::Arrow);
+    window.setMouseCursor(cursor);
     int offset = 50;
     
     int randArray[arr_size];
     for(int i=0;i<arr_size;i++)
       randArray[i]=rand()%arr_size;  
 
-    quickSort(randArray, 0, arr_size-1);
+    quickSort(randArray, 0, arr_size-1, window);
     for(int i=0;i<arr_size;i++)
       std::cout << randArray[i] << "\n "; 
     window.close();
-    sf::Event event;
     return 0;
 }

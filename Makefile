@@ -1,15 +1,19 @@
-all: compile link open
+CXX = g++
+CXXFLAGS = -I include -Wall -std=c++17
+SFMLFLAGS = $(shell pkg-config --libs --cflags sfml-graphics)
+OBJ = obj/main.o obj/QuickSortVis.o
 
-compile:
-	g++ -I inc -c src/QuickSortVis.cpp -o obj/QuickSortVis.o
-	g++ -I inc -c src/main.cpp -o obj/main.o
-link:
-	g++ obj/main.o -o main -L lib -l sfml-graphics -l sfml-window -l sfml-system
+all: main QuickSortVis
 
-open:
-	main.exe	
+main: obj/main.o
+	$(CXX) $^ -o $@ $(SFMLFLAGS)
 
-quickSort:
-	g++ -I inc -c src/QuickSortVis.cpp -o obj/QuickSortVis.o
-	g++ obj/QuickSortVis.o -o QuickSortVis -L lib -l sfml-graphics -l sfml-audio -l sfml-window -l sfml-system
-	QuickSortVis.exe
+QuickSortVis: obj/QuickSortVis.o
+	$(CXX) $^ -o $@ $(SFMLFLAGS)
+
+obj/%.o: src/%.cpp
+	mkdir -p obj
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+clean:
+	rm -rf obj main QuickSortVis

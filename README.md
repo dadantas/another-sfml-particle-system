@@ -23,5 +23,12 @@ Controls:
 
     None
 
-Both projects contain a Makefile to simplify the compilation process, as well as precompiled .exe
 
+## Compiling
+
+Build using CMake with the commmands 
+```bash
+cmake -B build
+cmake --build build 
+```
+The binaries are then in ./build/bin/

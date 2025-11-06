@@ -1,6 +1,9 @@
 # SFML-project
 
 This repository contains two projects developed using the SFML library, a cross-platform software development library designed to provide a simple application programming interface (API) for multimedia programming.
+
+![](assets/demonstration.gif)
+
 ## Super simple particle physics
 
 To run this project, compile and execute the main.cpp file. This project features simple particle physics and allows the user to interact by spawning and deleting particles. Additionally, the user can switch between four particle types by pressing the following keys:
